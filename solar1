@@ -1,0 +1,59 @@
+import bpy
+import random
+
+# Clear existing objects in the scene
+bpy.ops.object.select_all(action='SELECT')
+bpy.ops.object.delete(confirm=False)
+
+# 1. Create the Trunk
+bpy.ops.mesh.primitive_cylinder_add(
+    radius=0.4, 
+    depth=3.0, 
+    location=(0, 0, 1.5)
+)
+trunk = bpy.context.active_object
+trunk.name = "Tree_Trunk"
+
+# Create material for trunk (Brown)
+trunk_mat = bpy.data.materials.new(name="Trunk_Material")
+trunk_mat.use_nodes = True
+trunk_bsdf = trunk_mat.node_tree.nodes.get("Principled BSDF")
+trunk_bsdf.inputs['Base Color'].default_value = (0.2, 0.1, 0.05, 1.0) # Dark brown
+trunk_bsdf.inputs['Roughness'].default_value = 0.9
+trunk.data.materials.append(trunk_mat)
+
+
+# 2. Create Foliage Layers (Stacked Cones)
+foliage_mat = bpy.data.materials.new(name="Foliage_Material")
+foliage_mat.use_nodes = True
+foliage_bsdf = foliage_mat.node_tree.nodes.get("Principled BSDF")
+foliage_bsdf.inputs['Base Color'].default_value = (0.05, 0.4, 0.1, 1.0) # Forest green
+foliage_bsdf.inputs['Roughness'].default_value = 0.6
+
+layers = 3
+base_height = 2.5
+radius = 1.8
+height = 2.0
+
+for i in range(layers):
+    z_pos = base_height + (i * 1.1)
+    layer_radius = radius * (1 - (i * 0.25))
+    
+    bpy.ops.mesh.primitive_cone_add(
+        vertices=8, # Low-poly style
+        radius1=layer_radius, 
+        depth=height, 
+        location=(0, 0, z_pos)
+    )
+    foliage_layer = bpy.context.active_object
+    foliage_layer.name = f"Foliage_Layer_{i+1}"
+    foliage_layer.data.materials.append(foliage_mat)
+
+# 3. Add Lighting and Camera
+bpy.ops.object.light_add(type='SUN', location=(5, -5, 10))
+sun = bpy.context.active_object
+sun.data.energy = 3.0
+
+bpy.ops.object.camera_add(location=(8, -8, 5), rotation=(1.1, 0, 0.8))
+camera = bpy.context.active_object
+bpy.context.scene.camera = camera
